@@ -82,7 +82,7 @@ function logger.gethandle(name)
 		local filename = logger.path .. name .. ".log"
 		local parent_path = string.match(name,"(.*)/.*")
 		if parent_path then
-			os.execute("mkdir -p " .. logger.path .. parent_path)
+			os.execute("mkdir -p " .. logger.path .. "/" .. parent_path)
 		end
 		local fd  = io.open(filename,"a+b")
 		assert(fd,"logfile open failed:" .. tostring(filename))
@@ -115,7 +115,8 @@ function logger.init()
 	local modename = skynet.getenv("mode")
 	logger.mode = assert(logger.MODE_NAME_ID[modename],"Invalid modename:" .. tostring(modename))
 	logger.handles = {}
-	logger.path = skynet.getenv("workdir") .. "log/"
+	logger.path = skynet.getenv("workdir") .. "/log"
+	print("logger.path:",logger.path)
 	os.execute(string.format("mkdir -p %s",logger.path))
 	os.execute(string.format("ls -R %s > .log.tmp",logger.path))
 	fd = io.open(".log.tmp","r")
@@ -127,7 +128,7 @@ function logger.init()
 			if line == logger.path .. ":" then
 				section = ""
 			else
-				section = string.match(line,string.format("%s([^:]*):",logger.path))
+				section = string.match(line,string.format("%s/([^:]*):",logger.path))
 			end
 		else
 			if line:sub(#line-3) == ".log" then
