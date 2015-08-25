@@ -1,1 +1,1 @@
-package.path = package.path .. ";" .. "../accountcenter/?.lua;../accountcenter/?/init.lua"
+package.path = package.path .. ";" .. "../?.lua;../?/init.lua"
