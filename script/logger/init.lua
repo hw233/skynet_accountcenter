@@ -79,7 +79,7 @@ end
 
 function logger.gethandle(name)
 	if not logger.handles[name] then
-		local filename = logger.path .. name .. ".log"
+		local filename = string.format("%s/%s.log",logger.path,name)
 		local parent_path = string.match(name,"(.*)/.*")
 		if parent_path then
 			os.execute("mkdir -p " .. logger.path .. "/" .. parent_path)
@@ -137,8 +137,7 @@ function logger.init()
 				else
 					name = line:sub(1,#line-4)
 				end
-				filename = logger.path .. name .. ".log"
-				--print(filename)
+                filename = string.format("%s/%s.log",logger.path,name)
 				local fd  = io.open(filename,"a+b")
 				assert(fd,"logfile open failed:" .. tostring(filename))
 				fd:setvbuf("line")
