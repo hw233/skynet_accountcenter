@@ -1,6 +1,3 @@
-local cjson = require "cjson"
-
-require "script.logger"
 
 local VALID_GAMEFLAGS = getgameflags()
 
@@ -17,21 +14,14 @@ function acctmgr.clear()
 end
 
 function acctmgr.loadacct(acct)
-	cjson.encode_sparse_array(true)
-	local conn = db.getdb("acct")	
-	local val = conn:get(acct)
-	if val then
-		val = cjson.decode(val)
-	end
-	return val
+	local db = dbmgr.getdb()
+	return db:get(db:key("acct",acct))
 end
 
 function acctmgr.saveacct(acctobj)
 	local acct = acctobj.acct
-	cjson.encode_sparse_array(true)
-	local conn = db.getdb("acct")
-	local val = cjson.encode(acctobj)
-	conn:set(acct,val)
+	local db = db.getdb()
+	db:set(db:key("acct",acct),val)
 end
 
 function acctmgr.getacct(acct)
@@ -269,4 +259,8 @@ function acctmgr.mergeserver(acct,gameflag,src_srvname,dst_srvname,oldroleid,new
 	return STATUS_ACCT_NOEXIST
 end
 
+function acctmgr.genroleid(srvname)
+	local db = dbmgr.getdb()
+	local maxroleid = db.get(dbmgr.key("maxroleid",srvname)) or 10000
+end
 return acctmgr

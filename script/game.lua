@@ -1,5 +1,5 @@
 require "script.base"
-require "script.db"
+require "script.db.dbmgr"
 require "script.logger"
 require "script.console"
 require "script.acctmgr"
@@ -11,7 +11,7 @@ function game.startgame()
 	print("Startgame...")
 	console.init()
 	logger.init()
-	db.init()
+	dbmgr.init()
 	acctmgr.init()
 	oscmd.init()
 	game.initall = true
