@@ -1,7 +1,4 @@
 
-require "script.hotfix"
-require "script.logger"
-
 oscmd = oscmd or {}
 local delay = 10 --60
 local filename = "../shell/.oscmd.txt"

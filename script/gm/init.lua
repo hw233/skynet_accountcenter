@@ -1,5 +1,3 @@
-local skynet = require "skynet"
-
 local AUTH_SUPERADMIN = 100
 local AUTH_ADMIN = 90
 local AUTH_PROGRAMER = 80

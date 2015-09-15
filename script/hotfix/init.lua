@@ -1,8 +1,5 @@
-require "script.skynet"
-require "script.logger"
-
 local workdir = skynet.getenv("workdir")
-local patten = workdir .. "accountcenter/?.lua;" .. workdir .. "accountcenter/?/init.lua"
+local patten = workdir .. "/?.lua;"
 local ignore_module = {
 	["script.agent"] = true,
 	["script.watchdog"] = true,

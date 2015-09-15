@@ -1,7 +1,5 @@
 --print(package.path)
 require "script.game"
-require "script.db"
-
 
 local skynet = require "skynet"
 local socket = require "socket"

@@ -1,5 +1,3 @@
-local cjson = require "cjson"
-
 
 local function sync(agent,query,header,body)
 	local id = agent.id

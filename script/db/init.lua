@@ -16,12 +16,12 @@ end
 
 function cdb:connect(conf)
 	local conn = redis.connect(conf)	
-	logger:log("info","db",format("connect to database:%s conn:%s",conf,tostring(conn)))
+	logger.log("info","db",format("connect to database:%s conn:%s",conf,tostring(conn)))
 	return conn
 end
 
 function cdb:disconnect()
-	logger:log("info","db",format("disconnect %s",tostring(self.conn)))
+	logger.log("info","db",format("disconnect %s",tostring(self.conn)))
 	self.conn:disconnect()
 	self.conn = nil
 end
@@ -48,6 +48,7 @@ function cdb:get(key,default)
 end
 
 function cdb:set(key,value)
+	assert(value~=nil)
 	logger.log("debug","db",format("set,key=%s value=%s",key,value))
 	value = cjson.encode(value)
 	return self.conn:set(key,value)

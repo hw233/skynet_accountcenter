@@ -1,6 +1,4 @@
 
-require "script.acctmgr"
-
 local function register(agent,query,header,body)
 	local id = agent.id
 	local acct = query.acct

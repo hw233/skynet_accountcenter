@@ -20,8 +20,8 @@ end
 
 function acctmgr.saveacct(acctobj)
 	local acct = acctobj.acct
-	local db = db.getdb()
-	db:set(db:key("acct",acct),val)
+	local db = dbmgr.getdb()
+	db:set(db:key("acct",acct),acctobj)
 end
 
 function acctmgr.getacct(acct)

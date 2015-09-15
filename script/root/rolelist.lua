@@ -1,6 +1,3 @@
-local cjson = require "cjson"
-
-
 local function rolelist(agent,query,header,body)
 	local id = agent.id
 	local acct = query.acct

@@ -1,9 +1,10 @@
-require "script.base"
+require "script.base.init"
 require "script.db.dbmgr"
-require "script.logger"
-require "script.console"
+require "script.logger.init"
+require "script.console.init"
 require "script.acctmgr"
-require "script.oscmd"
+require "script.oscmd.init"
+require "script.hotfix.init"
 
 game = game or {}
 
