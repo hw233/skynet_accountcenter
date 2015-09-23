@@ -7,7 +7,7 @@ local function rolelist(agent,query,header,body)
 	local gameflag = query.gameflag
 	local srvname = query.srvname
 	local acctobj = acctmgr.getacct(acct)
-	if not acct then
+	if not acctobj then
 		return STATUS_ACCT_NOEXIST
 	end
 	
