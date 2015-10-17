@@ -15,7 +15,7 @@ local function srvlist(agent,query,header,body)
 			srvlist[gameflag] = getsrvlist(gameflag)
 		end
 	end
-	return STATUS_OK,{srvlist=srvlist}
+	return STATUS_OK,srvlist
 end
 
 return srvlist

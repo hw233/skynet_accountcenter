@@ -10,7 +10,7 @@ local function rolelist(agent,query,header,body)
 	
 	local status,rolelist = acctmgr.getrolelist(acct,gameflag,srvname)
 	if status == STATUS_OK then
-		return status,{roles=rolelist}
+		return status,rolelist
 	else
 		return status
 	end
