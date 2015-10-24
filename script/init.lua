@@ -56,8 +56,8 @@ function __onconnect(id,addr)
 end
 
 skynet.start(function ()
-	--local id = socket.listen("0.0.0.0",6000)
-	local id = socket.listen("127.0.0.1",6000)
+	local id = socket.listen("0.0.0.0",6000)
+	--local id = socket.listen("127.0.0.1",6000)
 	socket.start(id,__onconnect)
 	game.startgame()
 end)
