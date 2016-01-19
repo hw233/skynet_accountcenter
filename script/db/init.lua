@@ -2,28 +2,35 @@ cdb = cdb or {}
 
 function cdb.new(conf)
 	local self = {}
-	self.conn = cdb:connect(conf)
+	self.dbsrv = skynet.newservice("script/service/redisd")
 	setmetatable(self,{__index = function (t,k)
-		if cdb[k] then
-			return cdb[k]
+		local cmd = k
+		local f = function (self,...)
+			local func = cdb[cmd]
+			if func then
+				return func(self,...)
+			else
+				return skynet.call(self.dbsrv,"lua",cmd,...)
+			end
 		end
-		if t.conn[k] then
-			return t.conn[k]
-		end
+		t[k] = f
+		return f
 	end})
+	if conf then
+		self:connect(conf)
+	end
 	return self
 end
 
 function cdb:connect(conf)
-	local conn = redis.connect(conf)	
-	logger.log("info","db",format("connect to database:%s conn:%s",conf,tostring(conn)))
-	return conn
+	logger.log("info","db",format("connect to database:%s conn=%s",conf,self.dbsrv))
+	skynet.call(self.dbsrv,"lua","connect",conf)
 end
 
 function cdb:disconnect()
-	logger.log("info","db",format("disconnect %s",tostring(self.conn)))
-	self.conn:disconnect()
-	self.conn = nil
+	logger.log("info","db",format("disconnect %s",tostring(self.dbsrv)))
+	skynet.call(self.dbsrv,"lua","disconnect")
+	self.dbsrv = nil
 end
 
 
@@ -36,13 +43,11 @@ function cdb:key(...)
 	return ret
 end
 
-function cdb:get(key,default)
-	local value = self.conn:get(key)
+function cdb:get(key)
+	local value = skynet.call(self.dbsrv,"lua","get",key)
 	logger.log("debug","db",format("get,key=%s value=%s",key,value))
 	if value then
 		value = cjson.decode(value)
-	else
-		value = default
 	end
 	return value
 end
@@ -51,17 +56,17 @@ function cdb:set(key,value)
 	assert(value~=nil)
 	logger.log("debug","db",format("set,key=%s value=%s",key,value))
 	value = cjson.encode(value)
-	return self.conn:set(key,value)
+	return skynet.call(self.dbsrv,"lua","set",key,value)
 end
 
 
 function cdb:hset(key,field,value)
 	value = cjson.encode(value)	
-	self.conn:hset(key,field,value)
+	return skynet.call(self.dbsrv,"lua","hset",key,field,value)
 end
 
 function cdb:hvals(key)
-	local r = self.conn:hvals(key)
+	local r = skynet.call(self.dbsrv,"lua","hvals",key)
 	for k,v in pairs(r) do
 		r[k] = cjson.decode(v)
 	end

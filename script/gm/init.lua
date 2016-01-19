@@ -1,3 +1,5 @@
+require "script.skynet"
+
 local AUTH_SUPERADMIN = 100
 local AUTH_ADMIN = 90
 local AUTH_PROGRAMER = 80
@@ -56,7 +58,6 @@ local function docmd(player,cmdline)
 				end
 			end
 		end
-		master = player
 		if func then
 			if authority >= need_auth then
 				local args = {}
@@ -65,20 +66,18 @@ local function docmd(player,cmdline)
 						table.insert(args,arg)
 					end
 				end
-				func(args)
+				return func(args)
 			else
 				return string.format("authority not enough(%d < %d)",authority,need_auth)
 			end
 		else
 			if authority >= AUTH_ADMIN then
-				func = load(cmdline)
-				func()
+				func = load(cmdline,"=(load)","bt")
+				return func()
 			else
 				return "unknow cmd:" .. tostring(cmdline)
 			end
 		end
-		master = nil
-		return "success"
 	else
 		return "cann't parse cmdline:" .. tostring(cmdline)
 	end
@@ -89,24 +88,40 @@ function gm.docmd(pid,cmdline)
 	local player
 	if pid ~= 0 then
 		player = playermgr.getplayer(pid)
+		if not player then
+			player = playermgr.loadofflineplayer(pid)
+		end
 		authority = player:authority()
 	else
 		player = 0
 	end
-	local isok,result = pcall(docmd,player,cmdline)
-	logger.log("info","gm",string.format("#%d(authority=%s) docmd='%s' isok=%s result=%s",pid,authority,cmdline,isok,result))
-	net.msg.notify(pid,string.format("执行结果:%s",result))
+	master = player
+	local tbl = {pcall(docmd,player,cmdline)}
+	master = nil
+	local issuccess = table.remove(tbl,1)
+	local result
+	if next(tbl) then
+		for i,v in ipairs(tbl) do
+			tbl[i] = mytostring(v)
+		end
+		result = table.concat(tbl,",")
+	end
+	logger.log("info","gm",format("#%d(authority=%s) docmd='%s' issuccess=%s result=%s",pid,authority,cmdline,issuccess,result))
+	if pid ~= 0 then
+		net.msg.notify(pid,string.format("执行%s\n%s",issuccess and "成功" or "失败",result))
+	end
+	return issuccess,result
 end
 
 --- usage: setauthority pid authority
 --- e.g. : setauthority 10001 80 # 将玩家10001权限设置成80(权限范围:[1,100])
 function gm.setauthority(args)
-	local ok,result = pcall(checkargs,args,"int:[10000,]","int:[1,100]")
+	local ok,args = pcall(checkargs,args,"int:[10000,]","int:[1,100]")
 	if not ok then
 		net.msg.notify(master.pid,"usage: setauthority pid authorit")
 		error(result)
 	end
-	local pid,authority = table.unpack(result)	
+	local pid,authority = table.unpack(args)	
 	local player = playermgr.getplayer(pid)
 	if not player then
 		net.msg.notify(master.pid,string.format("玩家(%d)不在线,无法对其进行此项操作",pid))
@@ -137,35 +152,28 @@ function gm.setauthority(args)
 	player:setauthority(authority)
 end
 
-
+gm.CMD = {
+	[AUTH_SUPERADMIN] = {
+	},
+	[AUTH_ADMIN] = {
+	},
+	[AUTH_PROGRAMER] = {
+	},
+	[AUTH_DESIGNER] = {
+	},
+	[AUTH_NORMAL] = {
+		setauthority = true,
+		buildgmdoc = true,
+	},
+}
 
 function gm.init()
-	require "script.gm.test"
 	require "script.gm.helper"
-	require "script.gm.card"
-	require "script.gm.other"
 	require "script.gm.sys"
-	gm.CMD = {
-		[AUTH_SUPERADMIN] = {
-		},
-		[AUTH_ADMIN] = {
-			clearcard = true,
-		},
-		[AUTH_PROGRAMER] = {
-			test = true,
-			shutdown = true,
-			maintain = true,
-		},
-		[AUTH_DESIGNER] = {
-		},
-		[AUTH_NORMAL] = {
-			setauthority = true,
-			buildgmdoc = true,
-			addcard = true,
-			delcard = true,
-		},
-	}
 end
 
+function __hotfix(oldmod)
+	gm.init()
+end
 
 return gm

@@ -1,3 +1,4 @@
+
 unpack = unpack or table.unpack
 
 STARTTIME1 = 1408896000  --2014-08-25 00:00:00 Mon Aug
@@ -6,12 +7,18 @@ HOUR_SECS = 3600
 DAY_SECS = 24 * HOUR_SECS 
 WEEK_SECS = 7 * DAY_SECS
 
+SAVE_DELAY = 300
+
 -- number
-MAX_NUMBER = 2 ^ 32 - 1
+MAX_NUMBER = math.floor(2 ^ 31 - 1)
 MIN_NUMBER = -MAX_NUMBER
 
+MAX_ITEMID = 10000
+
+SYSTEM_MAIL = 0
+
 --用户必须保证对象非递归嵌套表
-function self_tostring(obj)
+function mytostring(obj)
 	if type(obj) ~= "table" then
 		return tostring(obj)
 	end
@@ -19,10 +26,10 @@ function self_tostring(obj)
 	table.insert(cache,"{")
 	for k,v in pairs(obj) do
 		if type(k) == "number" then
-			--table.insert(cache,self_tostring(v)..",")
-			table.insert(cache,string.format("[%d]=%s,",k,self_tostring(v)))
+			--table.insert(cache,mytostring(v)..",")
+			table.insert(cache,string.format("[%d]=%s,",k,mytostring(v)))
 		else
-			local str = string.format("%s=%s,",self_tostring(k),self_tostring(v))
+			local str = string.format("%s=%s,",mytostring(k),mytostring(v))
 			table.insert(cache,str)	
 		end
 	end
@@ -36,7 +43,7 @@ function format(fmt,...)
 	local len = math.max(#args,args.n or 0)
 	for i = 1, len do
 		if type(args[i]) == "table" then
-			args[i] = self_tostring(args[i])
+			args[i] = mytostring(args[i])
 		elseif type(args[i]) ~= "number" then
 			args[i] = tostring(args[i])
 		end
@@ -49,6 +56,7 @@ function printf(fmt,...)
 end
 
 function pretty_tostring(obj,indent)
+	indent = indent or 0
 	if type(obj) ~= "table" then
 		return tostring(obj)
 	end
@@ -190,7 +198,23 @@ function uppper_bound(t,val,cmp)
 	end
 end
 
-
+function equal(lhs,rhs)
+	if lhs == rhs then
+		return true
+	end
+	if type(lhs) == "table" and type(rhs) == "table" then
+		local tmp = deepcopy(rhs)
+		for k,v in pairs(lhs) do
+			if equal(v,tmp[k]) then
+				tmp[k] = nil
+			end
+		end
+		if not next(tmp) then
+			return true
+		end
+	end
+	return false
+end
 
 --function xrange(b,e,step)
 --	step = step or 1
@@ -315,13 +339,16 @@ function ishit(num,limit)
 	return math.random(1,limit) <= num
 end
 
-function shuffle(list,inplace)
+function shuffle(list,inplace,limit)
 	if not inplace then
 		list = deepcopy(list)
 	end
 	local idx,tmp
 	local len = #list
 	for i = 1,len-1 do
+		if limit and i > limit then
+			return slice(list,1,limit)
+		end
 		idx = math.random(i,len)
 		tmp = list[idx]
 		list[idx] = list[i]
@@ -338,15 +365,15 @@ end
 
 
 
-function choosevalue(dct)
+function choosevalue(dct,func)
 	local sum = 0
 	for ratio,_ in pairs(dct) do
-		sum = sum + ratio
+		sum = sum + (func and func(ratio) or ratio)
 	end
 	local hit = math.random(1,sum)
 	local limit = 0
 	for ratio,val in pairs(dct) do
-		limit = limit + ratio
+		limit = limit + (func and func(ratio) or ratio)
 		if hit <= limit then
 			return val
 		end
@@ -354,16 +381,16 @@ function choosevalue(dct)
 	return nil
 end
 
-function choosekey(dct)
+function choosekey(dct,func)
 	local sum = 0
 	for _,ratio in pairs(dct) do
-		sum = sum + ratio
+		sum = sum + (func and func(ratio) or ratio)
 	end
-	assert(sum > 1,"[choosekey] Invalid sum ratio:" .. tostring(sum))
+	assert(sum >= 1,"[choosekey] Invalid sum ratio:" .. tostring(sum))
 	local hit = math.random(1,sum)
 	local limit = 0
 	for key,ratio in pairs(dct) do
-		limit = limit + ratio
+		limit = limit + (func and func(ratio) or ratio)
 		if hit <= limit then
 			return key
 		end
@@ -390,8 +417,8 @@ function getweekno(flag)
 	return math.floor(tm/WEEK_SECS) + (tm % WEEK_SECS == 0 and 0 or 1)
 end
 
-function getsecond()
-	return os.time()
+function getsecond(now)
+	return now or os.time()
 end
 
 function getyear(now)
@@ -437,15 +464,41 @@ function getminutesecond(now)
 	return tonumber(s)
 end
 
---今天过去的秒数
-function getdaysecond()
-	now = os.time()
+--当天过去的秒数
+function getdaysecond(now)
+	now = now or os.time()
 	return getdayhour(now) * HOUR_SECS + gethourminute(now) * 60 + getminutesecond(now)
 end
 
---今天0点时间(秒为单位)
-function getdayzerotime()
-	return getsecond() - getdaysecond()
+--当天0点时间(秒为单位)
+function getdayzerotime(now)
+	now = now or os.time()
+	return getsecond(now) - getdaysecond(now)
+end
+
+
+-- 当周0点(星期一为一周起点)
+function getweekzerotime(now)
+	now = now or os.time()
+	local weekday = getweekday(now)
+	weekday = weekday == 0 and 7 or weekday
+	local diffday = weekday - 1
+	return getdayzerotime(now-diffday*DAY_SECS)
+end
+
+-- 当周0点（星期天为一周起点)
+function getweek2zerotime(now)
+	now = now or os.time()
+	local weekday = getweekday(now)
+	local diffday = weekday - 0
+	return getdayzerotime(now-diffday*DAY_SECS)
+end
+
+-- 当月0点
+function getmonthzerotime(now)
+	now = now or os.time()
+	local monthday = getmonthday(now)
+	return getdayzerotime(now-monthday*DAY_SECS)
 end
 
 --string
@@ -491,16 +544,21 @@ end
 -- package
 function sendpackage(pid,protoname,cmd,args,onresponse)
 	require "script.playermgr"
-	require "script.proto"
+	require "script.proto.init"
 	obj = playermgr.getobject(pid)
 	if obj then
-		proto.sendpackage(obj.__agent,protoname,cmd,args,onresponse)
+		if obj.__agent then
+			proto.sendpackage(obj.__agent,protoname,cmd,args,onresponse)
+		end
 	end
 end
 
-function broadcast(pids,protoname,cmd,args,onresponse)
-	for _,pid in pairs(pids) do
-		sendpackage(pid,protoname,cmd,args,onresponse)
+function broadcast(func)
+	require "script.playermgr"
+	for pid,player in pairs(playermgr.id_obj) do
+		if player then
+			func(player)
+		end
 	end
 end
 
@@ -516,7 +574,7 @@ function isvalid_roletype(roletype)
 end
 
 function isvalid_accountname(account)
-	return string.match(account,"^[%w_@.]+$")
+	return string.match(account,"%w+@%w+%.%w+")
 end
 
 function isvalid_passwd(passwd)
@@ -539,6 +597,12 @@ function checkargs(args,...)
 		if not args[i] then
 			return nil,string.format("argument not enough(%d < %d)",#args,#typs)
 		end
+		if typs[i] == "*" then -- ignore check
+			for j=i,#args do
+				table.insert(ret,args[j])
+			end
+			return true,ret
+		end
 		local typ = typs[i]
 		local range_begin,range_end
 		local val
@@ -556,27 +620,30 @@ function checkargs(args,...)
 		end
 		if typ == "int" or typ == "double" then
 			val = tonumber(args[i])
+			if not val then
+				return false,"invalid number:" .. tostring(args[i])
+			end
 			if typ == "int" then
-				assert(val == math.floor(val),"invalid int:" .. tostring(args[i]))
+				val = math.floor(val)
 			end
 			if range_begin and range_end then
 				if not (range_begin <= val and val <= range_end) then
-					return nil,string.format("%s not in range [%s,%s]",val,range_begin,range_end)
+					return false,string.format("%s not in range [%s,%s]",val,range_begin,range_end)
 				end
 			end
 			table.insert(ret,val)
 		elseif typ == "boolean" then
 			typ = string.lower(typ)
-			if not (typ == "true" or typ == "false") then
-				return nil,"invalid boolean:" .. tostring(typ)
+			if not (typ == "true" or typ == "false" or typ == "1" or typ == "0") then
+				return false,"invalid boolean:" .. tostring(typ)
 			end
-			val = (typ == "true" and true or false)
+			val = (typ == "true" or typ == "1") and true or false
 			table.insert(ret,val)
 		elseif typ == "string" then
 			val = args[i]
 			table.insert(ret,val)
 		else
-			return nil,"unknow type:" ..tostring(typ)
+			return false,"unknow type:" ..tostring(typ)
 		end
 	end
 	return true,ret
@@ -584,6 +651,7 @@ end
 
 -- error
 local function collect_localvar(level)
+	level = level + 1 -- skip self function 'collect_localval'
 	local function dumptable(tbl) 
 		local attrs = {"pid","id","name","sid","warid","flag",}
 		local tips = {}
@@ -620,14 +688,170 @@ function onerror(msg)
 	pcall(function ()
 		-- assert/error触发(需要搜集level+1层--调用assert/error函数所在层)
 		-- 代码逻辑直接触发搜集level层即可
-		local vars = collect_localvar(level+1)
+		local vars = collect_localvar(level)
 		table.insert(vars,"================")
-		local vars2 = collect_localvar(level+2)
+		local vars2 = collect_localvar(level+1)
 		for _,s in ipairs(vars2) do
 			table.insert(vars,s)
 		end
-		table.insert(vars,1,string.format("error: [%s] %s",os.date("%Y-%m-%d %H:%M:%S"),msg))
+		table.insert(vars,1,string.format("[ERROR] [%s] %s",os.date("%Y-%m-%d %H:%M:%S"),msg))
 		local msg = debug.traceback(table.concat(vars,"\n"),level)
-		skynet.error(msg)
+		print(msg)
+		require "script.logger.init"
+		logger.log("error","onerror",msg)
+		--skynet.error(msg)
 	end)
+end
+
+HEX_MAP = {}
+for i=0,15 do
+	local char
+	if i >= 10 then
+		char = string.char(97+i-10)
+	else
+		char = tostring(i)
+	end
+	tostring(i)
+	HEX_MAP[i] = char
+	HEX_MAP[char] = i
+end
+
+
+function uuid()
+	local ret = {}
+	for i=1,32 do
+		table.insert(ret,HEX_MAP[math.random(0,0xf)])
+	end
+	return table.concat(ret,"")
+end
+
+-- 扩展表功能
+function table.any(set,func)
+	for k,v in pairs(set) do
+		if func(k,v) then
+			return true,k,v
+		end
+	end
+	return false
+end
+
+function table.all(set,func)
+	for k,v in pairs(set) do
+		if not func(k,v) then
+			return false,k,v
+		end
+	end
+	return true
+end
+
+function table.filter(tbl,func)
+	local newtbl = {}
+	for k,v in pairs(tbl) do
+		if func(k,v) then
+			newtbl[k] = v
+		end
+	end
+	return newtbl
+end
+
+function table.max(func,...)
+	local args = table.pack(...)
+	local max
+	for i,arg in ipairs(args) do
+		local val = func(arg)
+		if not max or val > max then
+			max = val
+		end
+	end
+	return max
+end
+
+function table.min(func,...)
+	local args = table.pack(...)
+	local min
+	for i,arg in ipairs(args) do
+		local val = func(arg)
+		if not min or val < min then
+			min = val
+		end
+	end
+	return min
+end
+
+function table.map(func,...)
+	local args = table.pack(...)
+	assert(#args >= 1)
+	func = func or function (...)
+		return {...}
+	end
+	local maxn = table.max(function (tbl)
+			return #tbl
+		end,...)
+	local len = #args
+	local newtbl = {}
+	for i=1,maxn do
+		local list = {}
+		for j=1,len do
+			table.insert(list,args[j][i])
+		end
+		local ret = func(table.unpack(list))
+		table.insert(newtbl,ret)
+	end
+	return newtbl
+end
+
+function table.broadcast(tbl,func)
+	table.map(func,tbl)
+end
+
+function table.find(tbl,func)
+	local isfunc = type(func) == "function"
+	for k,v in pairs(tbl) do
+		if isfunc then
+			if func(k,v) then
+				return k,v
+			end
+		else
+			if func == v then
+				return k,v
+			end
+		end
+	end
+end
+
+function table.dump(t,space,name)
+	space = space or ""
+	name = name or ""
+	local cache = { [t] = "."}
+	local function _dump(t,space,name)
+		local temp = {}
+		for k,v in pairs(t) do
+			local key = tostring(k)
+			if cache[v] then
+				table.insert(temp,"+" .. key .. " {" .. cache[v].."}")
+			elseif type(v) == "table" then
+				local new_key = name .. "." .. key
+				cache[v] = new_key
+				table.insert(temp,"+" .. key .. _dump(v,space .. (next(t,k) and "|" or " " ).. string.rep(" ",#key),new_key))
+			else
+				table.insert(temp,"+" .. key .. " [" .. tostring(v).."]")
+			end
+		end
+		return table.concat(temp,"\n"..space)
+	end
+	return _dump(t,space,name)
+end
+
+-- 扩展string
+function string.rtrim(str)
+	return string.match(str,"^(%s-[^%s]*)%s*$")
+end
+
+function string.ltrim(str)
+	return string.match(str,"^%s*(.*)$")
+end
+
+function string.trim(str)
+	str = string.ltrim(str)
+	return string.rtrim(str)
 end
