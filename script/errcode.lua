@@ -1,3 +1,4 @@
+NO_RESPONSE = -1
 STATUS_OK = 0						--OK
 STATUS_PASSWD_NOMATCH = 1			--密码不匹配
 STATUS_ACCT_FMT_ERR = 2				--帐号格式错误

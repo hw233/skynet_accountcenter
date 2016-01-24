@@ -27,6 +27,9 @@ function game.shutdown(reason)
 	print("Shutdown")
 	logger.log("info","game",string.format("shutdown start,reason=%s",reason))
 	dbmgr.shutdown()
+	for i,agent in ipairs(__agents) do
+		skynet.send(agent,"lua","exec","dbmgr.shutdown()")
+	end
 	timer.timeout("timer.shutdown",20,function ()
 
 		logger.log("info","game",string.format("shutdown success,reason=%s",reason))

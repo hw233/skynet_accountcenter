@@ -27,6 +27,10 @@ end
 function gm.hotfix(args)
 	for i,modname in ipairs(args) do
 		hotfix.hotfix(modname)
+		for i,agent in ipairs(__agents) do
+			local cmd = string.format("hotfix.hotfix(%q)",modname)
+			skynet.send(agent,"lua","exec",cmd)
+		end
 	end
 end
 
