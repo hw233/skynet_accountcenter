@@ -30,7 +30,7 @@ function acctmgr.addacct(acct,passwd)
 	if acctobj then
 		return STATUS_ACCT_ALREADY_EXIST
 	end
-	logger.log("info","acct",string.format("addacct,acct=%s passwd=%s",acct,passwd))
+	logger.log("info","acct",string.format("[addacct] acct=%s passwd=%s",acct,passwd))
 	local newacct = {
 		acct = acct,
 		passwd = passwd,
@@ -45,7 +45,7 @@ end
 function acctmgr.delacct(acct)
 	local acctobj = acctmgr.getacct(acct)
 	if acctobj then
-		logger.log("info","acct",string.format("delacct,acct=%s",acct))
+		logger.log("info","acct",string.format("[delacct] acct=%s",acct))
 		local db = dbmgr.getdb()
 		db:del(acct)
 		return STATUS_OK
@@ -87,7 +87,7 @@ function acctmgr.addrole(acct,gameflag,srvname,role)
 				gold = 0,
 				createtime = os.time(),
 			}
-			logger.log("info","acct",format("addrole,srvname=%s role=%s",srvname,role))
+			logger.log("info","acct",format("[addrole] srvname=%s role=%s",srvname,role))
 			table.insert(rolelist,role)
 			acctmgr.saveacct(acctobj)
 			return STATUS_OK
@@ -114,7 +114,7 @@ function acctmgr.delrole(acct,gameflag,srvname,roleid)
 			if rolelist then
 				local role = acctmgr.getrole(rolelist,roleid)
 				if role then
-					logger.log("info","acct",string.format("delrole,srvname=%s roleid=%s",srvname,roleid))
+					logger.log("info","acct",string.format("[delrole] srvname=%s roleid=%s",srvname,roleid))
 					rolelist[roleid] = nil
 					acctmgr.saveacct(acctobj)
 					return STATUS_OK
@@ -169,7 +169,7 @@ function acctmgr.syncrole(acct,gameflag,srvname,syncdata)
 					return STTUS_OVERLIMIT
 				end
 
-				logger.log("info","acct",format("syncrole,gameflag=%s srvname=%s syncdata=%s",gameflag,srvname,syncdata))
+				logger.log("info","acct",format("[syncrole] gameflag=%s srvname=%s syncdata=%s",gameflag,srvname,syncdata))
 				local role = acctmgr.getrole(rolelist,roleid)
 				if not role then
 					role = {}

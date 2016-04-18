@@ -19,7 +19,7 @@ function hotfix.hotfix(modname)
 		modname = modname:sub(#prefix,#modname)
 	end
 	if modname:sub(1,6) ~= "script" then
-		logger.log("warning","hotfix",string.format("cann't hotfix non-script code,module=%s",modname))
+		logger.log("warning","hotfix",string.format("[cann't hotfix non-script code] module=%s",modname))
 		return
 	end
 	if modname:sub(-4,-1) == ".lua" then
@@ -48,7 +48,7 @@ function hotfix.hotfix(modname)
 		end
 	end
 	if not chunk then
-		local msg = string.format("hotfix fail,module=%s reason=%s",modname,table.concat(errlist,"\n"))
+		local msg = string.format("%s hotfix fail,module=%s reason=%s",SERVICE_NAME,modname,table.concat(errlist,"\n"))
 		logger.log("error","hotfix",msg)
 		skynet.error(msg)
 		return

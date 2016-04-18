@@ -19,20 +19,20 @@ function game.startgame()
 	oscmd.init()
 	game.initall = true
 	print("Startgame ok")
-	logger.log("info","game","startgame")
+	logger.log("info","game","[startgame]")
 end
 
 function game.shutdown(reason)
 	game.initall = nil
 	print("Shutdown")
-	logger.log("info","game",string.format("shutdown start,reason=%s",reason))
+	logger.log("info","game",string.format("[shutdown start] reason=%s",reason))
 	dbmgr.shutdown()
 	for i,agent in ipairs(__agents) do
 		skynet.send(agent,"lua","exec","dbmgr.shutdown()")
 	end
 	timer.timeout("timer.shutdown",20,function ()
 
-		logger.log("info","game",string.format("shutdown success,reason=%s",reason))
+		logger.log("info","game",string.format("[shutdown success] reason=%s",reason))
 		logger.shutdown()
 		os.execute(string.format("cd ../shell/ && sh killserver.sh %s",skynet.getenv("srvname")))
 	end)
