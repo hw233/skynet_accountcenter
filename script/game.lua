@@ -6,6 +6,7 @@ require "script.acctmgr"
 require "script.oscmd.init"
 require "script.hotfix.init"
 require "script.gm.init"
+require "script.banlogin"
 
 game = game or {}
 

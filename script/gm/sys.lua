@@ -18,8 +18,7 @@ function gm.runcmd(args)
 		cmdline = "return " .. cmdline
 	end
 	func = load(cmdline,"=(load)","bt")
-	local result= func()
-	return result
+	return func()
 end
 
 --- cmd: hotfix

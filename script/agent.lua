@@ -37,7 +37,7 @@ local function __onconnect(id,addr)
 						end
 					end
 				else
-					skynet.error(func)
+					--skynet.error(func)
 					response(id,404)
 				end
 			elseif method == "POST" then
