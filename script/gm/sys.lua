@@ -17,7 +17,7 @@ function gm.runcmd(args)
 	if not noresult then
 		cmdline = "return " .. cmdline
 	end
-	func = load(cmdline,"=(load)","bt")
+	local func = load(cmdline,"=(load)","bt")
 	return func()
 end
 
@@ -26,7 +26,7 @@ end
 function gm.hotfix(args)
 	for i,modname in ipairs(args) do
 		hotfix.hotfix(modname)
-		for i,agent in ipairs(__agents) do
+		for j,agent in ipairs(__agents) do
 			local cmd = string.format("hotfix.hotfix(%q)",modname)
 			skynet.send(agent,"lua","exec",cmd)
 		end

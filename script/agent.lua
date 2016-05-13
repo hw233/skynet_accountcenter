@@ -25,11 +25,10 @@ local function __onconnect(id,addr)
 				local isok,func = pcall(require,modname)
 				if isok then
 					query = query and urllib.parse_query(query)
-					--local isok,status,extra = pcall(func,agent,query,header,body)
 					local isok,status,result = xpcall(func,onerror,agent,query,header,body)
 					logger.log("debug","request",format("url=%s isok=%s status=%s result=%s",url,isok,status,result))
 					if not isok then
-						skynet.error(string.format("exec %s,status=%s extra=%s",url,status,extra))
+						skynet.error(string.format("exec %s,status=%s result=%s",url,status,result))
 						response(id,500)
 					else
 						if status ~= NO_RESPONSE then

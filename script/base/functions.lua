@@ -504,7 +504,7 @@ end
 
 --filesystem
 function currentdir()
-	local ok,ret = pcall(require,"lfs")
+	local ok,lfs = pcall(require,"lfs")
 	if ok then
 		return lfs.currentdir()
 	end
@@ -519,24 +519,13 @@ end
 function sendpackage(pid,protoname,cmd,args,onresponse)
 	require "script.playermgr"
 	require "script.proto.init"
-	obj = playermgr.getobject(pid)
+	local obj = playermgr.getobject(pid)
 	if obj then
 		if obj.__agent then
 			proto.sendpackage(obj.__agent,protoname,cmd,args,onresponse)
 		end
 	end
 end
-
-function broadcast(func)
-	require "script.playermgr"
-	for pid,player in pairs(playermgr.id_obj) do
-		if player then
-			func(player)
-		end
-	end
-end
-
-
 
 -- 常用函数
 function isvalid_name(name)

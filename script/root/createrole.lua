@@ -4,6 +4,7 @@ local function createrole(agent,query,header,body)
 	local acct = query.acct
 	local gameflag = query.gameflag
 	local srvname = query.srvname
+	local roleid
 	if query.genroleid then
 		roleid = acctmgr.genroleid()
 	else

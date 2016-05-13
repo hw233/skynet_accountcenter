@@ -23,7 +23,7 @@ local function console_main_loop()
 			end
 		end
 	end
-	socket.unlock(stdin)
+	--socket.unlock(stdin)
 end
 
 function console.init()

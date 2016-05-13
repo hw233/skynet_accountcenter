@@ -106,7 +106,7 @@ function acctmgr.delrole(acct,gameflag,srvname,roleid)
 	if not srvlist[srvname] then
 		return STATUS_SRVNAME_ERR
 	end
-	local acccobj = acctmgr.getacct(acct)
+	local acctobj = acctmgr.getacct(acct)
 	if acctobj then
 		local game = acctobj.games[gameflag]
 		if game then
@@ -166,7 +166,7 @@ function acctmgr.syncrole(acct,gameflag,srvname,syncdata)
 			local rolelist = game[srvname]
 			if rolelist then
 				if #rolelist >= 5 then
-					return STTUS_OVERLIMIT
+					return STATUS_OVERLIMIT
 				end
 
 				logger.log("info","acct",format("[syncrole] gameflag=%s srvname=%s syncdata=%s",gameflag,srvname,syncdata))
