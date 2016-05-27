@@ -17,8 +17,10 @@ game = game or {}
 
 function game.startgame()
 	print("Startgame...")
-	console.init()
-	_print("console.init")
+	if skynet.getenv("mode") == "debug" then
+		console.init()
+		_print("console.init")
+	end
 	logger.init()
 	_print("logger.init")
 	dbmgr.init()

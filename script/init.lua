@@ -11,7 +11,7 @@ __agents = __agents or {}
 
 skynet.start(function ()
 	local id = socket.listen("0.0.0.0",6000)
-	local agentnum = tonumber(skynet.getenv("agentnum")) or 20
+	local agentnum = tonumber(skynet.getenv("agentnum")) or 15
 	local servicename = "script/agent"
 	for i=1,agentnum do
 		__agents[i] = skynet.newservice(servicename)
