@@ -44,7 +44,7 @@ local function __onconnect(id,addr)
 		end
 	else
 		if url == sockethelper.socket_error then
-			skynet.error("socket closed")
+			skynet.error("socket closed",id)
 		else
 			skynet.error(url)
 		end
