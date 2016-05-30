@@ -1,8 +1,12 @@
-
+--/*
+-- 功能:游戏内常用全局函数/lua5.3兼容
+--*/
 unpack = unpack or table.unpack
 
-STARTTIME1 = 1408896000  --2014-08-25 00:00:00 Mon Aug
-STARTTIME2 = 1408809600  --2014-08-24 00:00:00 Sun Aug
+--STARTTIME1 = 1408896000  --2014-08-25 00:00:00 Mon Aug
+--STARTTIME2 = 1408809600  --2014-08-24 00:00:00 Sun Aug
+STARTTIME1 = os.time({year=2014,month=8,day=25,hour=0,min=0,sec=0})
+STARTTIME2 = os.time({year=2014,month=8,day=24,hour=0,min=0,sec=0})
 HOUR_SECS = 3600
 DAY_SECS = 24 * HOUR_SECS 
 WEEK_SECS = 7 * DAY_SECS
@@ -13,9 +17,8 @@ SAVE_DELAY = 300
 MAX_NUMBER = math.floor(2 ^ 31 - 1)
 MIN_NUMBER = -MAX_NUMBER
 
-MAX_ITEMID = 10000
-
 SYSTEM_MAIL = 0
+BASE_RATIO = 1000000
 
 --用户必须保证对象非递归嵌套表
 function mytostring(obj)
@@ -52,7 +55,11 @@ function format(fmt,...)
 end
 
 function printf(fmt,...)
-	print(format(fmt,...))
+	if ... == nil then
+		print(fmt)
+	else
+		print(format(fmt,...))
+	end
 end
 
 function pretty_tostring(obj,indent)
@@ -100,192 +107,6 @@ function pprintf(fmt,...)
 	print(pretty_format(fmt,...))
 end
 
-
-function keys(t)
-	local ret = {}
-	for k,v in pairs(t) do
-		table.insert(ret,k)
-	end
-	return ret
-end
-
-function values(t)
-	local ret = {}
-	for k,v in pairs(t) do
-		table.insert(ret,v)
-	end
-	return ret
-end
-
-function remove_from(t,val,maxcnt)
-	local delkey = {}
-	for k,v in pairs(t) do
-		if v == val then
-			if not maxcnt or #delkey < maxcnt then
-				delkey[#delkey] = k
-			else
-				break
-			end
-		end
-	end
-	for _,k in pairs(delkey) do
-		t[k] = nil
-	end
-	return #delkey
-end
-
-function list(t)
-	local ret = {}
-	for k,v in pairs(t) do
-		ret[#ret+1] = v
-	end
-	return ret
-end
-
-function range(b,e,step)
-	step = step or 1
-	if not e then
-		e = b
-		b = 1
-	end
-	local list = {}
-	for i = b,e,step do
-		table.insert(list,i)
-	end
-	return list
-end
-
-
-local function less_than(lhs,rhs)
-	return lhs < rhs
-end
-
-function lower_bound(t,val,cmp)
-	cmp = cmp or less_than
-	local len = #t
-	local first,last = 1,len + 1
-	while first < last do
-		local pos = math.floor((last-first) / 2) + first
-		if not cmp(t[pos],val) then
-			last = pos
-		else
-			first = pos + 1
-		end
-	end
-	if last > len then
-		return nil
-	else
-		return last
-	end
-end
-
-function uppper_bound(t,val,cmp)
-	cmp = cmp or less_than
-	local len = #t
-	local first,last = 1,len + 1
-	while first < last do
-		local pos = math.floor((last-first)/2) + first
-		if cmp(val,t[pos]) then
-			last = pos
-		else
-			first = pos + 1
-		end
-	end
-	if last > len then
-		return nil
-	else
-		return last
-	end
-end
-
-function equal(lhs,rhs)
-	if lhs == rhs then
-		return true
-	end
-	if type(lhs) == "table" and type(rhs) == "table" then
-		local tmp = deepcopy(rhs)
-		for k,v in pairs(lhs) do
-			if equal(v,tmp[k]) then
-				tmp[k] = nil
-			end
-		end
-		if not next(tmp) then
-			return true
-		end
-	end
-	return false
-end
-
---function xrange(b,e,step)
---	step = step or 1
---	if not e then
---		e = b
---		b = 1
---	end
---	return iter(range(b,e,step))
---end
---
----- same as pairs
---function iter(t)
---	local t = t
---	local k = nil
---	function _iter()
---		k,v = next(t,k)
---		return k,v
---	end
---	return _iter
---end
-
-
-
-function slice(list,b,e,step)
-	step = step or 1
-	if not e then
-		e = b
-		b = 1
-	end
-	e = math.min(#list,e)
-	local new_list = {}
-	local len = #list
-	local idx
-	for i = b,e,step do
-		idx = i >= 0 and i or len + i + 1
-		table.insert(new_list,list[idx])
-	end
-	return new_list
-end
-
-function filter(t,func)
-	assert(func ~= nil)
-	local ret = {}
-	for k,v in pairs(t) do
-		if func(k,v) then
-			ret[k] = v
-		end
-	end
-	return ret
-end
-
-function map(func,...)
-	local args = {...}
-	assert(#args >= 1)
-	local maxlen,num = 0,#args
-	for i = 1, num do
-		if #args[i] > maxlen then
-			maxlen = #args[i]
-		end
-	end
-	local ret = {}
-	for i = 1, maxlen do
-		local list = {}
-		for j = 1, num do
-			table.insert(list,args[j][i])
-		end
-		table.insert(ret,func(unpack(list)))
-	end
-	return ret
-end
-
 --copy
 -------------------------------------------------------------
 -- lua元素复制接口,提供浅复制(copy)和深复制两个接口(deepcopy)
@@ -316,20 +137,6 @@ function deepcopy(o,seen)
 		newtable[deepcopy(k,seen)] = deepcopy(v,seen)
 	end
 	return setmetatable(newtable,getmetatable(o))
-end
-
-function updatetable(tbl1,tbl2)
-	for k,v in pairs(tbl2) do
-		tbl1[k] = v
-	end
-end
-
-function findintable(tbl,val)
-	for k,v in pairs(tbl) do
-		if v == val then
-			return k
-		end
-	end
 end
 
 --ratio
@@ -508,9 +315,8 @@ function currentdir()
 	if ok then
 		return lfs.currentdir()
 	end
-	local fd = popen("pwd")
-	local path = fd:read("*all")
-	print (path)
+	local fd = io.popen("pwd")
+	local path = fd:read("*all"):trim()
 	return path
 end
 
@@ -616,7 +422,7 @@ end
 local function collect_localvar(level)
 	level = level + 1 -- skip self function 'collect_localval'
 	local function dumptable(tbl) 
-		local attrs = {"pid","id","name","sid","warid","flag",}
+		local attrs = {"pid","id","name","sid","warid","flag","state","inarea","targetid","tid","taskid","type","srvname",}
 		local tips = {}
 		for _,attr in ipairs(attrs) do
 			if tbl[attr] then
@@ -674,7 +480,6 @@ for i=0,15 do
 	else
 		char = tostring(i)
 	end
-	tostring(i)
 	HEX_MAP[i] = char
 	HEX_MAP[char] = i
 end
@@ -689,185 +494,66 @@ function uuid(len)
 	return table.concat(ret,"")
 end
 
--- 扩展表功能
-function table.any(set,func)
-	for k,v in pairs(set) do
-		if func(k,v) then
-			return true,k,v
+
+function istrue(val)
+	if val then
+		if type(val) == "number" then
+			return val ~= 0
+		elseif type(val) == "string" then
+			val = string.lower(val)
+			return val == "true" or val == "yes"
 		end
 	end
 	return false
 end
 
-function table.all(set,func)
-	for k,v in pairs(set) do
-		if not func(k,v) then
-			return false,k,v
-		end
-	end
-	return true
+-- pack_function/unpack_function [START]
+local function getcmd(t,cmd)
+	local _cmd = string.format("return %s",cmd)
+	t[cmd] = load(_cmd,"=(load)","bt",_G)
+	return t[cmd]
+end
+local compile_cmd = setmetatable({},{__index=getcmd})
+
+
+function pack_function(cmd,...)
+	-- 保证最后一个参数为nil时不丢失
+	local n = select("#",...)
+	local args = {...}
+	local pack_data = {
+		cmd = cmd,
+		args = cjson.encode(args),
+		n = n,
+		_name = "pack_function",
+	}
+	return pack_data
 end
 
-function table.filter(tbl,func)
-	local newtbl = {}
-	for k,v in pairs(tbl) do
-		if func(k,v) then
-			newtbl[k] = v
-		end
+function unpack_function(pack_data)
+	local cmd = pack_data.cmd
+	local attrname,sep,funcname = string.match(cmd,"^(.*)([.:])(.+)$")	
+	local args = pack_data.args
+	args = cjson.decode(args)
+	print("cjson.decode",cmd,attrname,sep,funcname)
+	local n = pack_data.n
+	--loadstr = string.format("return %s",attrname)
+	--local chunk = load(loadstr,"(=load)","bt",_G)
+	local chunk = compile_cmd[attrname]
+	local caller = chunk()
+	if type(caller) == "function" then
+		caller = caller()
 	end
-	return newtbl
-end
-
-function table.max(func,...)
-	local args = table.pack(...)
-	local max
-	for i,arg in ipairs(args) do
-		local val = func(arg)
-		if not max or val > max then
-			max = val
-		end
-	end
-	return max
-end
-
-function table.min(func,...)
-	local args = table.pack(...)
-	local min
-	for i,arg in ipairs(args) do
-		local val = func(arg)
-		if not min or val < min then
-			min = val
-		end
-	end
-	return min
-end
-
-function table.map(func,...)
-	local args = table.pack(...)
-	assert(#args >= 1)
-	func = func or function (...)
-		return {...}
-	end
-	local maxn = table.max(function (tbl)
-			return #tbl
-		end,...)
-	local len = #args
-	local newtbl = {}
-	for i=1,maxn do
-		local list = {}
-		for j=1,len do
-			table.insert(list,args[j][i])
-		end
-		local ret = func(table.unpack(list))
-		table.insert(newtbl,ret)
-	end
-	return newtbl
-end
-
-function table.find(tbl,func)
-	local isfunc = type(func) == "function"
-	for k,v in pairs(tbl) do
-		if isfunc then
-			if func(k,v) then
-				return k,v
-			end
-		else
-			if func == v then
-				return k,v
-			end
-		end
-	end
-end
-
-function table.dump(t,space,name)
-	space = space or ""
-	name = name or ""
-	local cache = { [t] = "."}
-	local function _dump(t,space,name)
-		local temp = {}
-		for k,v in pairs(t) do
-			local key = tostring(k)
-			if cache[v] then
-				table.insert(temp,"+" .. key .. " {" .. cache[v].."}")
-			elseif type(v) == "table" then
-				local new_key = name .. "." .. key
-				cache[v] = new_key
-				table.insert(temp,"+" .. key .. _dump(v,space .. (next(t,k) and "|" or " " ).. string.rep(" ",#key),new_key))
-			else
-				table.insert(temp,"+" .. key .. " [" .. tostring(v).."]")
-			end
-		end
-		return table.concat(temp,"\n"..space)
-	end
-	return _dump(t,space,name)
-end
-
-function dump(o,...)
-	if type(o) ~= "table" then
-		return tostring(o)
+	if sep == "." then
+		return functor(caller[funcname],table.unpack(args,1,n))
 	else
-		return table.dump(o,...)
+		assert(sep == ":")
+		return functor(caller[funcname],caller,table.unpack(args,1,n))
 	end
 end
 
-
--- 扩展string
-function string.rtrim(str)
-	return string.gsub(str,"^[ \t\n\r]+","")
-end
-
-function string.ltrim(str)
-	return string.gsub(str,"[ \t\n\r]+$","")
-end
-
-function string.trim(str)
-	str = string.ltrim(str)
-	return string.rtrim(str)
-end
-
-function string.isdigit(str)
-	local ret = pcall(tonumber,str)
-	return ret
-end
-
-function string.hexstr(str)
-	assert(type(str) == "string")
-	local len = #str
-	return string.format("0x" .. string.rep("%x",len),string.byte(str,1,len))
-end
-
-local WHITECHARS_PAT = "%S+"
-function string.split(str,pat,maxsplit)
-	pat = pat or WHITECHARS_PAT
-	maxsplit = maxsplit or -1
-	local ret = {}
-	local i = 0
-	for s in string.gmatch(str,pat) do
-		if not (maxsplit == -1 or i <= maxsplit) then
-			break
-		end
-		table.insert(ret,s)
-		i = i + 1
+function is_pack_function(func)
+	if type(func) == "table" then
+		return func._name == "pack_function"
 	end
-	return ret
 end
-
-function string.urlencodechar(char)
-	return string.format("%%%02X",string.byte(char))
-end
-
-function string.urldecodechar(hexchar)
-	return string.char(tonumber(hexchar,16))
-end
-
-function string.urlencode(str)
-	str = string.gsub(str,"([^%w%.%- ])",string.urlencodechar)
-	str = string.gsub(str," ","+")
-	return str
-end
-
-function string.urldecode(str)
-	str = string.gsub(str,"+"," ")
-	str = string.gsub(str,"%%(%x%x)",string.urldecodechar)
-	return str
-end
+-- pack_function/unpack_function [END]

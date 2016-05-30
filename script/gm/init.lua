@@ -96,7 +96,9 @@ function gm.docmd(pid,cmdline)
 		player = 0
 	end
 	master = player
-	local tbl = {xpcall(docmd,onerror,player,cmdline)}
+	--local tbl = {xpcall(docmd,onerror,player,cmdline)}
+	-- gm指令执行的报错不记录到onerror.log中
+	local tbl = {pcall(docmd,player,cmdline)}
 	master = nil
 	local issuccess = table.remove(tbl,1)
 	local result
@@ -106,7 +108,7 @@ function gm.docmd(pid,cmdline)
 		end
 		result = table.concat(tbl,",")
 	end
-	logger.log("info","gm",format("[gm.docmd] pid=%s authority=%s cmd='%s' issuccess=%s result=%s",pid,authority,cmdline,issuccess,result))
+	logger.log("info","gm",format("[gm.docmd] pid=%s authority=%s cmd='%s' issuccess=%s return=%s",pid,authority,cmdline,issuccess,result))
 	if pid ~= 0 then
 		net.msg.notify(pid,string.format("执行%s\n%s",issuccess and "成功" or "失败",result))
 	end
