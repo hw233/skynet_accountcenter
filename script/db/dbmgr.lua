@@ -17,12 +17,12 @@ function dbmgr.getdb(srvname)
 			db = tonumber(skynet.getenv("dbno")) or 0,
 			auth = skynet.getenv("dbauth") or "sundream",
 		}
+		-- 这里会调用阻塞api:skynet.uniqueservice
 		conn = cdb.new(conf)
 		dbmgr.conns[srvname] = conn
 	end
 	return conn
 end
-
 
 function dbmgr.shutdown()
 	for srvname,conn in pairs(dbmgr.conns) do
